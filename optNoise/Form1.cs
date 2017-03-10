@@ -9,6 +9,9 @@ using System.Windows.Forms;
 using MySql.Data.MySqlClient;
 using System.IO;
 
+// Ver 0.96 ( 2017.03.10 )
+//(1) 2nd項目に絞って表示させる項目をツールバーに組み入れた。
+//
 
 // Ver 0.95 ( 2017.03.07 )
 //(1) csv write のdataGridviewの切り替えと書き出し
