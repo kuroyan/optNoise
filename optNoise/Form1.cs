@@ -48,6 +48,7 @@ namespace optNoise
             selectCheckFlag   = false;
             seleCancelFlag = false;
             textBox2.Text = dbSrverIPTXT.Text;
+            tabControl1.SelectedIndex = 1;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -832,6 +833,156 @@ namespace optNoise
 
         }
 
+        /// <summary>
+        /// データベースの表示
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+            string qcmd = "";
+            string seiban = textBox3.Text.Trim();
+            string table ="";
+
+            dataGridView3.Columns.Clear();
+            textBox1.Text = "";
+
+            if (comboBox3.Text == "")
+            {
+                string msg = "データベースのテーブルを選んでください";
+                MessageBox.Show(msg, "確認", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+
+            if( "(新版)inspection_ccb_pcba_msth" == comboBox3.Text )
+            {
+                table ="inspection_ccb_pcba_msth";
+            }
+            else
+            {
+                table ="inspection_ccb_pcba_smth";
+            }
+
+            string dataPic2Text = textToDate(dateTimePicker2.Text);
+
+            string srdate = dataPic2Text.Substring(0, 10);
+
+            if (( checkBox2.Checked == true) && ( checkBox1.Checked == false))
+            {
+                qcmd = "select * from aoc." + table + " where StartTime like '" + srdate + "%' order by Id desc";
+            }
+            else if ((checkBox2.Checked == false) && (checkBox1.Checked == true))
+            {
+                qcmd = "select * from aoc." + table +" where seiban = '" + seiban + "' order by Id desc";
+            }
+            else if ((checkBox1.Checked == true) && (checkBox2.Checked == true))
+            {
+                qcmd = "select * from aoc." + table + " where StartTime like '" + srdate + "%' and seiban ='" + seiban + "' order by Id desc";
+            }
+            else
+            {
+                if (MessageBox.Show("チェックが無い場合の全表示は時間がかかります", "確認", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation) == DialogResult.Cancel)
+                {
+                    return;
+                }
+                qcmd = "select * from aoc." + table +" order by Id desc";
+            }
+
+            dataGridView3.DataSource = mysql.getTable(qcmd);
+        }
+
+
+        /// <summary>
+        /// CSV write of dataGrid3
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (dataGridView3.Visible == true)
+            {
+                int cnt = dataGridView3.Rows.Count;
+                if (cnt < 1)
+                {
+                    return;
+                }
+                csvWriteByMysqlDataGrid3();
+            }
+        }
+
+
+        /// <summary>
+        /// MySQLの結果をCSV書き出しするための本体
+        /// </summary>
+        /// <param name="grd"></param>
+        private void csvWriteByMysqlDataGrid3()
+        {
+            // OpenFileDialog の新しいインスタンスを生成する (デザイナから追加している場合は必要ない)
+            SaveFileDialog openFileDialog1 = new SaveFileDialog();
+
+            // ダイアログのタイトルを設定する
+            saveFileDialog1.Title = "ＣＳＶ書き出し";
+
+            // ※下記の設定をしないと、一度選んだディレクトリを２度目も再度選択してくれる。
+            // 初期表示するディレクトリを設定する
+
+            saveFileDialog1.InitialDirectory = @"c:\\";
+
+            // 初期表示するファイル名を設定する
+            saveFileDialog1.FileName = fileNameTemp;
+
+            // ファイルのフィルタを設定する
+            saveFileDialog1.Filter = "ＣＳＶファイル|*.csv";
+
+            // ダイアログを表示し、戻り値が [OK] の場合は、選択したファイルを表示する
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+
+                using (StreamWriter writer = new StreamWriter(saveFileDialog1.FileName, false, Encoding.GetEncoding("shift_jis")))
+                {
+                    int rowCount = dataGridView3.Rows.Count;
+                    int colCount = dataGridView3.ColumnCount;
+
+                    // ユーザによる行追加が許可されている場合は、最後に新規入力用の
+                    // 1行分を差し引く
+                    if (dataGridView3.AllowUserToAddRows == true)
+                    {
+                        rowCount = rowCount - 1;
+                    }
+
+                    string sp = "";
+
+                    // ヘッダー出力
+                    foreach (DataGridViewColumn column in dataGridView3.Columns)
+                    {
+                        sp += column.HeaderText + ", ";
+                        //column.HeaderText = String.Concat("Column ",
+                        //column.Index.ToString());
+                    }
+                    writer.WriteLine(sp);
+
+                    // 行
+                    for (int i = 0; i < rowCount; i++)
+                    {
+                        // リストの初期化
+                        List<String> strList = new List<String>();
+
+                        // 列
+                        for (int j = 0; j < dataGridView3.Columns.Count; j++)
+                        {
+                            strList.Add(dataGridView3[j, i].Value.ToString());
+                        }
+                        String[] strArray = strList.ToArray();  // 配列へ変換
+
+                        // CSV 形式に変換
+                        String strCsvData = String.Join(",", strArray);
+
+                        writer.WriteLine(strCsvData);
+                    }
+                }
+            }
+        }
+        
     }
 
 }
